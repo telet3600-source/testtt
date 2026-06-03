@@ -1,0 +1,2488 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Garage SaaS API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: auth
+  - name: customers
+  - name: vehicles
+  - name: orders
+  - name: invoices
+  - name: technicians
+  - name: reviews
+  - name: reports
+  - name: portal
+  - name: dashboard
+  - name: superadmin
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── AUTH (Staff) ─────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: staffLogin
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffLoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffLoginResult"
+        "401":
+          description: Unauthorized
+
+  /auth/logout:
+    post:
+      operationId: staffLogout
+      tags: [auth]
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getStaffMe
+      tags: [auth]
+      responses:
+        "200":
+          description: Current staff user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffUser"
+        "401":
+          description: Unauthorized
+
+  # ── PORTAL (Customer) ─────────────────────────────────────────────────────────
+  /portal/login:
+    post:
+      operationId: portalLogin
+      tags: [portal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalLoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalLoginResult"
+
+  /portal/logout:
+    post:
+      operationId: portalLogout
+      tags: [portal]
+      responses:
+        "200":
+          description: Logged out
+
+  /portal/me:
+    get:
+      operationId: getPortalMe
+      tags: [portal]
+      responses:
+        "200":
+          description: Current customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalCustomer"
+
+  /portal/change-password:
+    post:
+      operationId: portalChangePassword
+      tags: [portal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed
+
+  /portal/orders:
+    get:
+      operationId: getPortalOrders
+      tags: [portal]
+      responses:
+        "200":
+          description: Customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /portal/orders/{id}:
+    get:
+      operationId: getPortalOrder
+      tags: [portal]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+
+  /portal/orders/{id}/approve:
+    post:
+      operationId: portalApproveOrder
+      tags: [portal]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalInput"
+      responses:
+        "200":
+          description: Approval recorded
+
+  /portal/vehicles:
+    get:
+      operationId: getPortalVehicles
+      tags: [portal]
+      responses:
+        "200":
+          description: Customer vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+
+  /portal/vehicles/{id}/history:
+    get:
+      operationId: getPortalVehicleHistory
+      tags: [portal]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vehicle maintenance history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleHistory"
+
+  /portal/balance:
+    get:
+      operationId: getPortalBalance
+      tags: [portal]
+      responses:
+        "200":
+          description: Customer balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerBalance"
+
+  /portal/reviews:
+    post:
+      operationId: createPortalReview
+      tags: [portal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: Review created
+
+  # ── PUBLIC TRACKING ─────────────────────────────────────────────────────────
+  /track/{token}:
+    get:
+      operationId: trackOrder
+      tags: [orders]
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tracking info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackingInfo"
+
+  # ── DASHBOARD ────────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/orders-pipeline:
+    get:
+      operationId: getOrdersPipeline
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Orders by stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdersPipeline"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Recent activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/upcoming-deliveries:
+    get:
+      operationId: getUpcomingDeliveries
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Cars ready for delivery
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  # ── CUSTOMERS ────────────────────────────────────────────────────────────────
+  /customers:
+    get:
+      operationId: getCustomers
+      tags: [customers]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerList"
+
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+    put:
+      operationId: updateCustomer
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /customers/{id}/vehicles:
+    get:
+      operationId: getCustomerVehicles
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+
+  /customers/{id}/orders:
+    get:
+      operationId: getCustomerOrders
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /customers/{id}/balance:
+    get:
+      operationId: getCustomerBalance
+      tags: [customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer balance and debt info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerBalance"
+
+  # ── VEHICLES ──────────────────────────────────────────────────────────────────
+  /vehicles:
+    get:
+      operationId: getVehicles
+      tags: [vehicles]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vehicles list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+
+    post:
+      operationId: createVehicle
+      tags: [vehicles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+
+  /vehicles/{id}:
+    get:
+      operationId: getVehicle
+      tags: [vehicles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vehicle detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleDetail"
+
+    put:
+      operationId: updateVehicle
+      tags: [vehicles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+
+  /vehicles/{id}/oil-records:
+    get:
+      operationId: getVehicleOilRecords
+      tags: [vehicles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Oil change records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OilRecord"
+
+    post:
+      operationId: createOilRecord
+      tags: [vehicles]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OilRecordInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OilRecord"
+
+  # ── WORK ORDERS ───────────────────────────────────────────────────────────────
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [orders]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: technicianId
+          in: query
+          schema:
+            type: integer
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Orders list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderList"
+
+    post:
+      operationId: createOrder
+      tags: [orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+
+    put:
+      operationId: updateOrder
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Status updated
+
+  /orders/{id}/services:
+    post:
+      operationId: addOrderService
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderServiceInput"
+      responses:
+        "201":
+          description: Service added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderService"
+
+  /orders/{id}/services/{serviceId}:
+    delete:
+      operationId: removeOrderService
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+
+  /orders/{id}/parts:
+    post:
+      operationId: addOrderPart
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderPartInput"
+      responses:
+        "201":
+          description: Part added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderPart"
+
+  /orders/{id}/parts/{partId}:
+    delete:
+      operationId: removeOrderPart
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: partId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+
+  /orders/{id}/invoice:
+    post:
+      operationId: issueInvoice
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Invoice issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /orders/{id}/tracking-link:
+    get:
+      operationId: getOrderTrackingLink
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tracking link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackingLink"
+
+  # ── INVOICES ─────────────────────────────────────────────────────────────────
+  /invoices:
+    get:
+      operationId: getInvoices
+      tags: [invoices]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoices list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceList"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}/payments:
+    get:
+      operationId: getInvoicePayments
+      tags: [invoices]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payments for invoice
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+
+    post:
+      operationId: addPayment
+      tags: [invoices]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  # ── TECHNICIANS ───────────────────────────────────────────────────────────────
+  /technicians:
+    get:
+      operationId: getTechnicians
+      tags: [technicians]
+      responses:
+        "200":
+          description: Technicians list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Technician"
+
+    post:
+      operationId: createTechnician
+      tags: [technicians]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TechnicianInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+
+  /technicians/{id}:
+    get:
+      operationId: getTechnician
+      tags: [technicians]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Technician detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+
+    put:
+      operationId: updateTechnician
+      tags: [technicians]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TechnicianUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Technician"
+
+  /technicians/{id}/orders:
+    get:
+      operationId: getTechnicianOrders
+      tags: [technicians]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Technician orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /technicians/{id}/stats:
+    get:
+      operationId: getTechnicianStats
+      tags: [technicians]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Technician statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TechnicianStats"
+
+  # ── REVIEWS ───────────────────────────────────────────────────────────────────
+  /reviews:
+    get:
+      operationId: getReviews
+      tags: [reviews]
+      responses:
+        "200":
+          description: All reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+  /reviews/stats:
+    get:
+      operationId: getReviewStats
+      tags: [reviews]
+      responses:
+        "200":
+          description: Review statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewStats"
+
+  /reviews/{id}/reply:
+    post:
+      operationId: replyToReview
+      tags: [reviews]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewReplyInput"
+      responses:
+        "200":
+          description: Reply posted
+
+  # ── REPORTS ───────────────────────────────────────────────────────────────────
+  /reports/financial:
+    get:
+      operationId: getFinancialReport
+      tags: [reports]
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Financial report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialReport"
+
+  /reports/technicians-performance:
+    get:
+      operationId: getTechPerformanceReport
+      tags: [reports]
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Technician performance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TechPerformance"
+
+  /reports/debts:
+    get:
+      operationId: getDebtReport
+      tags: [reports]
+      responses:
+        "200":
+          description: Outstanding debts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtReport"
+
+  # ── SUPER ADMIN ───────────────────────────────────────────────────────────────
+  /superadmin/login:
+    post:
+      operationId: superAdminLogin
+      tags: [superadmin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuperAdminLoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuperAdminLoginResult"
+
+  /superadmin/tenants:
+    get:
+      operationId: getTenants
+      tags: [superadmin]
+      responses:
+        "200":
+          description: All tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+
+    post:
+      operationId: createTenant
+      tags: [superadmin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantInput"
+      responses:
+        "201":
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /superadmin/tenants/{id}:
+    get:
+      operationId: getTenant
+      tags: [superadmin]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tenant detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+    put:
+      operationId: updateTenant
+      tags: [superadmin]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /superadmin/stats:
+    get:
+      operationId: getSuperAdminStats
+      tags: [superadmin]
+      responses:
+        "200":
+          description: Platform statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuperAdminStats"
+
+  /seed:
+    post:
+      operationId: seedData
+      tags: [health]
+      responses:
+        "200":
+          description: Seeded
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    # ── AUTH ───────────────────────────────────────────────────────────────────
+    StaffLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        remember_me:
+          type: boolean
+
+    StaffUser:
+      type: object
+      required: [id, email, role, fullName]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        role:
+          type: string
+        fullName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        garageId:
+          type: ["integer", "null"]
+
+    StaffLoginResult:
+      type: object
+      required: [user, redirect]
+      properties:
+        user:
+          $ref: "#/components/schemas/StaffUser"
+        redirect:
+          type: string
+
+    PortalLoginInput:
+      type: object
+      required: [phone, password]
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+
+    PortalCustomer:
+      type: object
+      required: [id, fullName, phonePrimary]
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        phonePrimary:
+          type: string
+        isFirstLogin:
+          type: boolean
+        vehiclesCount:
+          type: integer
+
+    PortalLoginResult:
+      type: object
+      required: [customer, isFirstLogin]
+      properties:
+        customer:
+          $ref: "#/components/schemas/PortalCustomer"
+        isFirstLogin:
+          type: boolean
+
+    ChangePasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+
+    ApprovalInput:
+      type: object
+      required: [approved]
+      properties:
+        approved:
+          type: boolean
+        notes:
+          type: string
+
+    # ── CUSTOMER ───────────────────────────────────────────────────────────────
+    Customer:
+      type: object
+      required: [id, fullName, phonePrimary]
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        phonePrimary:
+          type: string
+        phoneSecondary:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        ownerType:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        vehiclesCount:
+          type: integer
+        totalOrders:
+          type: integer
+        totalSpent:
+          type: number
+
+    CustomerList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Customer"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    CustomerInput:
+      type: object
+      required: [fullName, phonePrimary]
+      properties:
+        fullName:
+          type: string
+        phonePrimary:
+          type: string
+        phoneSecondary:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        gender:
+          type: string
+        ownerType:
+          type: string
+        notes:
+          type: string
+
+    CustomerUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phonePrimary:
+          type: string
+        phoneSecondary:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        notes:
+          type: string
+
+    CustomerBalance:
+      type: object
+      required: [totalInvoiced, totalPaid, balanceDue]
+      properties:
+        totalInvoiced:
+          type: number
+        totalPaid:
+          type: number
+        balanceDue:
+          type: number
+        overdueInvoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+
+    # ── VEHICLE ────────────────────────────────────────────────────────────────
+    Vehicle:
+      type: object
+      required: [id, customerId, plateNumber, make, model, year]
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        plateNumber:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        color:
+          type: ["string", "null"]
+        bodyType:
+          type: string
+        fuelType:
+          type: string
+        transmission:
+          type: string
+        currentMileage:
+          type: ["integer", "null"]
+        engineSize:
+          type: ["string", "null"]
+        vin:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    VehicleDetail:
+      allOf:
+        - $ref: "#/components/schemas/Vehicle"
+        - type: object
+          properties:
+            lastOilChange:
+              $ref: "#/components/schemas/OilRecord"
+            nextOilChangeMileage:
+              type: ["integer", "null"]
+            nextOilChangeDate:
+              type: ["string", "null"]
+            oilChangeOverdue:
+              type: boolean
+            maintenanceHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/Order"
+
+    VehicleHistory:
+      type: object
+      required: [vehicle, orders, oilRecords]
+      properties:
+        vehicle:
+          $ref: "#/components/schemas/Vehicle"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        oilRecords:
+          type: array
+          items:
+            $ref: "#/components/schemas/OilRecord"
+
+    VehicleInput:
+      type: object
+      required: [customerId, plateNumber, make, model, year]
+      properties:
+        customerId:
+          type: integer
+        plateNumber:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        color:
+          type: string
+        bodyType:
+          type: string
+        fuelType:
+          type: string
+        transmission:
+          type: string
+        currentMileage:
+          type: integer
+        engineSize:
+          type: string
+        vin:
+          type: string
+        notes:
+          type: string
+
+    VehicleUpdate:
+      type: object
+      properties:
+        plateNumber:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        color:
+          type: string
+        bodyType:
+          type: string
+        fuelType:
+          type: string
+        transmission:
+          type: string
+        currentMileage:
+          type: integer
+        engineSize:
+          type: string
+        notes:
+          type: string
+
+    OilRecord:
+      type: object
+      required: [id, vehicleId, brand, mileageAtChange]
+      properties:
+        id:
+          type: integer
+        vehicleId:
+          type: integer
+        type:
+          type: string
+        brand:
+          type: string
+        viscosity:
+          type: ["string", "null"]
+        quantityLiters:
+          type: ["number", "null"]
+        mileageAtChange:
+          type: integer
+        nextChangeMileage:
+          type: ["integer", "null"]
+        nextChangeDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    OilRecordInput:
+      type: object
+      required: [brand, mileageAtChange]
+      properties:
+        type:
+          type: string
+        brand:
+          type: string
+        viscosity:
+          type: string
+        quantityLiters:
+          type: number
+        mileageAtChange:
+          type: integer
+        nextChangeMileage:
+          type: integer
+        nextChangeDate:
+          type: string
+        notes:
+          type: string
+
+    # ── ORDER ──────────────────────────────────────────────────────────────────
+    Order:
+      type: object
+      required: [id, orderNumber, vehicleId, customerId, status]
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        vehicleId:
+          type: integer
+        customerId:
+          type: integer
+        status:
+          type: string
+        priority:
+          type: string
+        customerName:
+          type: string
+        vehiclePlate:
+          type: string
+        vehicleMake:
+          type: string
+        vehicleModel:
+          type: string
+        vehicleYear:
+          type: integer
+        estimatedCostMin:
+          type: ["number", "null"]
+        estimatedCostMax:
+          type: ["number", "null"]
+        grandTotal:
+          type: ["number", "null"]
+        receivedAt:
+          type: string
+        estimatedDeliveryAt:
+          type: ["string", "null"]
+        actualDeliveryAt:
+          type: ["string", "null"]
+        assignedTechnicianId:
+          type: ["integer", "null"]
+        assignedTechnicianName:
+          type: ["string", "null"]
+        paymentStatus:
+          type: string
+        customerComplaint:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    OrderList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    OrderDetail:
+      allOf:
+        - $ref: "#/components/schemas/Order"
+        - type: object
+          properties:
+            services:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderService"
+            parts:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderPart"
+            photos:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderPhoto"
+            statusHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/StatusHistoryItem"
+            invoice:
+              $ref: "#/components/schemas/Invoice"
+            mileageAtReception:
+              type: ["integer", "null"]
+            fuelLevel:
+              type: ["string", "null"]
+            diagnosisNotes:
+              type: ["string", "null"]
+            workDescription:
+              type: ["string", "null"]
+            internalNotes:
+              type: ["string", "null"]
+            customerApproved:
+              type: ["boolean", "null"]
+            trackingToken:
+              type: ["string", "null"]
+            totalPartsCost:
+              type: ["number", "null"]
+            totalLaborCost:
+              type: ["number", "null"]
+            discountAmount:
+              type: ["number", "null"]
+            taxRate:
+              type: ["number", "null"]
+
+    OrderInput:
+      type: object
+      required: [vehicleId, customerId, customerComplaint]
+      properties:
+        vehicleId:
+          type: integer
+        customerId:
+          type: integer
+        customerComplaint:
+          type: string
+        priority:
+          type: string
+        mileageAtReception:
+          type: integer
+        fuelLevel:
+          type: string
+        estimatedDurationHours:
+          type: number
+        estimatedCostMin:
+          type: number
+        estimatedCostMax:
+          type: number
+        estimatedDeliveryAt:
+          type: string
+        assignedTechnicianId:
+          type: integer
+        internalNotes:
+          type: string
+
+    OrderUpdate:
+      type: object
+      properties:
+        customerComplaint:
+          type: string
+        priority:
+          type: string
+        diagnosisNotes:
+          type: string
+        workDescription:
+          type: string
+        internalNotes:
+          type: string
+        estimatedCostMin:
+          type: number
+        estimatedCostMax:
+          type: number
+        estimatedDeliveryAt:
+          type: string
+        assignedTechnicianId:
+          type: integer
+        discountAmount:
+          type: number
+        discountReason:
+          type: string
+        taxRate:
+          type: number
+
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        note:
+          type: string
+
+    OrderService:
+      type: object
+      required: [id, orderId, serviceNameAr, quantity, unitPrice, totalPrice]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        serviceNameAr:
+          type: string
+        serviceNameEn:
+          type: ["string", "null"]
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        totalPrice:
+          type: number
+        status:
+          type: string
+        warrantyDays:
+          type: ["integer", "null"]
+
+    OrderServiceInput:
+      type: object
+      required: [serviceNameAr, quantity, unitPrice]
+      properties:
+        serviceNameAr:
+          type: string
+        serviceNameEn:
+          type: string
+        descriptionAr:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        warrantyDays:
+          type: integer
+
+    OrderPart:
+      type: object
+      required: [id, orderId, partNameAr, quantity, unitCost, unitPrice]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        partNameAr:
+          type: string
+        partNameEn:
+          type: ["string", "null"]
+        partNumber:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        unitPrice:
+          type: number
+        warrantyDays:
+          type: ["integer", "null"]
+
+    OrderPartInput:
+      type: object
+      required: [partNameAr, quantity, unitCost, unitPrice]
+      properties:
+        partNameAr:
+          type: string
+        partNameEn:
+          type: string
+        partNumber:
+          type: string
+        brand:
+          type: string
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        unitPrice:
+          type: number
+        warrantyDays:
+          type: integer
+
+    OrderPhoto:
+      type: object
+      required: [id, orderId, photoUrl, type]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        photoUrl:
+          type: string
+        thumbnailUrl:
+          type: ["string", "null"]
+        type:
+          type: string
+        captionAr:
+          type: ["string", "null"]
+        visibleToCustomer:
+          type: boolean
+        createdAt:
+          type: string
+
+    StatusHistoryItem:
+      type: object
+      required: [id, orderId, oldStatus, newStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        oldStatus:
+          type: string
+        newStatus:
+          type: string
+        changedByName:
+          type: string
+        note:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TrackingLink:
+      type: object
+      required: [token, url, expiresAt]
+      properties:
+        token:
+          type: string
+        url:
+          type: string
+        expiresAt:
+          type: string
+
+    TrackingInfo:
+      type: object
+      required: [orderNumber, status, vehicleInfo]
+      properties:
+        orderNumber:
+          type: string
+        status:
+          type: string
+        vehicleInfo:
+          type: string
+        customerComplaint:
+          type: ["string", "null"]
+        estimatedDeliveryAt:
+          type: ["string", "null"]
+        stages:
+          type: array
+          items:
+            type: object
+            properties:
+              stage:
+                type: string
+              completed:
+                type: boolean
+              label:
+                type: string
+
+    # ── INVOICE ────────────────────────────────────────────────────────────────
+    Invoice:
+      type: object
+      required: [id, invoiceNumber, orderId, total, status]
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        orderId:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        vehicleInfo:
+          type: string
+        subtotal:
+          type: number
+        taxAmount:
+          type: number
+        discountAmount:
+          type: number
+        total:
+          type: number
+        totalPaid:
+          type: number
+        balanceDue:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+        paymentStatus:
+          type: string
+        issuedAt:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        paidAt:
+          type: ["string", "null"]
+        notesAr:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    InvoiceList:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    Payment:
+      type: object
+      required: [id, invoiceId, amount, paymentMethod, paymentDate]
+      properties:
+        id:
+          type: integer
+        invoiceId:
+          type: integer
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        paymentReference:
+          type: ["string", "null"]
+        paymentDate:
+          type: string
+        receivedByName:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PaymentInput:
+      type: object
+      required: [amount, paymentMethod, paymentDate]
+      properties:
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        paymentReference:
+          type: string
+        paymentDate:
+          type: string
+        notes:
+          type: string
+
+    # ── TECHNICIAN ─────────────────────────────────────────────────────────────
+    Technician:
+      type: object
+      required: [id, fullName]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        specialization:
+          type: array
+          items:
+            type: string
+        shift:
+          type: string
+        isAvailable:
+          type: boolean
+        ratingAverage:
+          type: ["number", "null"]
+        totalOrdersCompleted:
+          type: integer
+        activeOrdersCount:
+          type: integer
+
+    TechnicianInput:
+      type: object
+      required: [fullName, email, password]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+        specialization:
+          type: array
+          items:
+            type: string
+        shift:
+          type: string
+
+    TechnicianUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phone:
+          type: string
+        specialization:
+          type: array
+          items:
+            type: string
+        shift:
+          type: string
+        isAvailable:
+          type: boolean
+
+    TechnicianStats:
+      type: object
+      required: [totalCompleted, averageRating, totalRevenue]
+      properties:
+        totalCompleted:
+          type: integer
+        averageRating:
+          type: number
+        totalRevenue:
+          type: number
+        ordersThisMonth:
+          type: integer
+
+    # ── REVIEW ─────────────────────────────────────────────────────────────────
+    Review:
+      type: object
+      required: [id, orderId, overallRating]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        vehicleInfo:
+          type: string
+        overallRating:
+          type: integer
+        speedRating:
+          type: ["integer", "null"]
+        qualityRating:
+          type: ["integer", "null"]
+        communicationRating:
+          type: ["integer", "null"]
+        cleanlinessRating:
+          type: ["integer", "null"]
+        commentAr:
+          type: ["string", "null"]
+        replyText:
+          type: ["string", "null"]
+        repliedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ReviewInput:
+      type: object
+      required: [orderId, overallRating]
+      properties:
+        orderId:
+          type: integer
+        overallRating:
+          type: integer
+        speedRating:
+          type: integer
+        qualityRating:
+          type: integer
+        communicationRating:
+          type: integer
+        cleanlinessRating:
+          type: integer
+        commentAr:
+          type: string
+
+    ReviewStats:
+      type: object
+      required: [averageOverall, totalReviews]
+      properties:
+        averageOverall:
+          type: number
+        averageSpeed:
+          type: number
+        averageQuality:
+          type: number
+        averageCommunication:
+          type: number
+        averageCleanliness:
+          type: number
+        totalReviews:
+          type: integer
+
+    ReviewReplyInput:
+      type: object
+      required: [replyText]
+      properties:
+        replyText:
+          type: string
+
+    # ── DASHBOARD ──────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [ordersToday, revenueToday, carsInGarage, averageRating, pendingApprovals, readyForDelivery]
+      properties:
+        ordersToday:
+          type: integer
+        revenueToday:
+          type: number
+        carsInGarage:
+          type: integer
+        averageRating:
+          type: number
+        pendingApprovals:
+          type: integer
+        readyForDelivery:
+          type: integer
+        revenueThisMonth:
+          type: number
+        ordersThisMonth:
+          type: integer
+
+    OrdersPipeline:
+      type: object
+      properties:
+        received:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        diagnosing:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        waitingApproval:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        inProgress:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        waitingParts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        ready:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        actorName:
+          type: string
+        orderId:
+          type: ["integer", "null"]
+        orderNumber:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    # ── REPORTS ────────────────────────────────────────────────────────────────
+    FinancialReport:
+      type: object
+      required: [totalRevenue, totalOrders, totalInvoiced, totalCollected]
+      properties:
+        totalRevenue:
+          type: number
+        totalOrders:
+          type: integer
+        totalInvoiced:
+          type: number
+        totalCollected:
+          type: number
+        totalOutstanding:
+          type: number
+        byPeriod:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              revenue:
+                type: number
+              orders:
+                type: integer
+
+    TechPerformance:
+      type: object
+      required: [technicianId, fullName, completedOrders, averageRating]
+      properties:
+        technicianId:
+          type: integer
+        fullName:
+          type: string
+        completedOrders:
+          type: integer
+        averageRating:
+          type: number
+        totalRevenue:
+          type: number
+
+    DebtReport:
+      type: object
+      required: [totalOutstanding, debtors]
+      properties:
+        totalOutstanding:
+          type: number
+        debtors:
+          type: array
+          items:
+            type: object
+            properties:
+              customerId:
+                type: integer
+              customerName:
+                type: string
+              phone:
+                type: string
+              totalDebt:
+                type: number
+              oldestInvoiceDays:
+                type: integer
+
+    # ── SUPER ADMIN ────────────────────────────────────────────────────────────
+    SuperAdminLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        totpCode:
+          type: string
+
+    SuperAdminLoginResult:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+        redirect:
+          type: string
+
+    Tenant:
+      type: object
+      required: [id, slug, nameAr, nameEn, plan, isActive]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        taglineAr:
+          type: ["string", "null"]
+        taglineEn:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        accentColor:
+          type: string
+        country:
+          type: string
+        currency:
+          type: string
+        plan:
+          type: string
+        maxUsers:
+          type: integer
+        maxOrdersPerMonth:
+          type: integer
+        subscriptionEnd:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        phone:
+          type: ["string", "null"]
+        addressAr:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TenantInput:
+      type: object
+      required: [slug, nameAr, nameEn, plan]
+      properties:
+        slug:
+          type: string
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        taglineAr:
+          type: string
+        taglineEn:
+          type: string
+        country:
+          type: string
+        currency:
+          type: string
+        plan:
+          type: string
+        maxUsers:
+          type: integer
+        maxOrdersPerMonth:
+          type: integer
+        subscriptionEnd:
+          type: string
+        adminEmail:
+          type: string
+        adminPassword:
+          type: string
+        adminName:
+          type: string
+        phone:
+          type: string
+        addressAr:
+          type: string
+
+    TenantUpdate:
+      type: object
+      properties:
+        nameAr:
+          type: string
+        nameEn:
+          type: string
+        taglineAr:
+          type: string
+        primaryColor:
+          type: string
+        accentColor:
+          type: string
+        plan:
+          type: string
+        maxUsers:
+          type: integer
+        maxOrdersPerMonth:
+          type: integer
+        subscriptionEnd:
+          type: string
+        isActive:
+          type: boolean
+        phone:
+          type: string
+        addressAr:
+          type: string
+
+    SuperAdminStats:
+      type: object
+      required: [totalTenants, activeTenants, totalOrdersToday, expiringSubscriptions]
+      properties:
+        totalTenants:
+          type: integer
+        activeTenants:
+          type: integer
+        totalOrdersToday:
+          type: integer
+        expiringSubscriptions:
+          type: integer
